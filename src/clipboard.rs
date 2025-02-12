@@ -5,65 +5,106 @@ use objc::declare::ClassDecl;
 use objc::runtime::{Class, Object, Sel};
 use objc::{class, msg_send, sel, sel_impl};
 use log::info;
+use std::time::{Instant, Duration};
 
-// A (static) variable to keep track of the last seen change count.
-// Because the timer runs on the main thread, access here is safe.
-static mut LAST_CHANGE_COUNT: i64 = 0;
+// Structure to keep track of clipboard state
+struct ClipboardState {
+    last_change_count: i64,
+    last_content: String,
+    last_copy_time: Instant,
+    consecutive_copies: u32,
+}
 
-/// This is the callback method that will be called by NSTimer.
-/// It checks the pasteboard’s changeCount, and if the value has changed,
-/// it reads the text (if any) and logs it.
+// Static variable to store clipboard state
+static mut CLIPBOARD_STATE: Option<ClipboardState> = None;
+
+/// Initialize the clipboard state
+fn init_clipboard_state() {
+    unsafe {
+        CLIPBOARD_STATE = Some(ClipboardState {
+            last_change_count: 0,
+            last_content: String::new(),
+            last_copy_time: Instant::now(),
+            consecutive_copies: 0,
+        });
+    }
+}
+
+/// Get the current clipboard text content
+unsafe fn get_clipboard_text(pasteboard: id) -> Option<String> {
+    let type_str = NSString::alloc(nil).init_str("public.utf8-plain-text");
+    let copied_text: id = msg_send![pasteboard, stringForType: type_str];
+    if copied_text != nil {
+        let c_str = NSString::UTF8String(copied_text);
+        if !c_str.is_null() {
+            return Some(std::ffi::CStr::from_ptr(c_str).to_string_lossy().into_owned());
+        }
+    }
+    None
+}
+
 extern "C" fn check_pasteboard(this: &Object, _cmd: Sel, _timer: id) {
     unsafe {
-        // Get the general pasteboard.
+        // Initialize state if it hasn't been initialized
+        if CLIPBOARD_STATE.is_none() {
+            init_clipboard_state();
+        }
+
+        let state = CLIPBOARD_STATE.as_mut().unwrap();
         let pasteboard: id = NSPasteboard::generalPasteboard(nil);
-        // Get the current change count (an NSInteger, here we use i64).
         let current_count: i64 = msg_send![pasteboard, changeCount];
+
         // If the pasteboard has changed...
-        if current_count != LAST_CHANGE_COUNT {
-            LAST_CHANGE_COUNT = current_count;
-            // We try to extract the string data.
-            // (We use "public.utf8-plain-text" as the type; older apps might use "NSStringPboardType".)
-            let type_str = NSString::alloc(nil).init_str("public.utf8-plain-text");
-            let copied_text: id = msg_send![pasteboard, stringForType: type_str];
-            if copied_text != nil {
-                let c_str = NSString::UTF8String(copied_text);
-                if !c_str.is_null() {
-                    let text = std::ffi::CStr::from_ptr(c_str).to_string_lossy();
-                    info!("Clipboard changed – new text: {}", text);
+        if current_count != state.last_change_count {
+            state.last_change_count = current_count;
+
+            if let Some(current_text) = get_clipboard_text(pasteboard) {
+                let now = Instant::now();
+                let time_since_last_copy = now.duration_since(state.last_copy_time);
+
+                if current_text == state.last_content && time_since_last_copy < Duration::from_secs(1) {
+                    state.consecutive_copies += 1;
+
+                    if state.consecutive_copies == 2 {
+                        info!("Double copy detected! Text: {}", current_text);
+                        // Reset consecutive copies after printing
+                        state.consecutive_copies = 0;
+                    }
+                } else {
+                    // Reset if it's different text or too much time has passed
+                    state.consecutive_copies = 1;
                 }
+
+                state.last_content = current_text;
+                state.last_copy_time = now;
             } else {
-                info!("Clipboard changed – but no text found.");
+                // Reset if no text content
+                state.consecutive_copies = 0;
+                state.last_content.clear();
             }
         }
     }
 }
 
-/// Starts the clipboard monitor: this function creates an Objective‑C class
-/// named "ClipboardMonitor" implementing a method to check the pasteboard.
-/// Then it schedules an NSTimer to call that method every second.
 pub fn start_clipboard_monitor() {
     unsafe {
-        // Create a new Objective‑C class "ClipboardMonitor" that subclasses NSObject.
+        // Initialize the clipboard state
+        init_clipboard_state();
+
         let superclass = class!(NSObject);
         let mut decl = ClassDecl::new("ClipboardMonitor", superclass).unwrap();
-        // Add our check_pasteboard: method.
         decl.add_method(sel!(checkPasteboard:), check_pasteboard as extern "C" fn(&Object, Sel, id));
         let cls = decl.register();
 
-        // Create an instance of ClipboardMonitor.
         let monitor: id = msg_send![cls, new];
 
-        // Schedule a repeating NSTimer that fires every 1 second.
         let _timer: id = msg_send![class!(NSTimer),
-            scheduledTimerWithTimeInterval: 1.0
+            scheduledTimerWithTimeInterval: 0.1  // Check more frequently (every 100ms)
             target: monitor
             selector: sel!(checkPasteboard:)
             userInfo: nil
-            repeats: 1]; // YES is 1 in Objective‑C
+            repeats: 1];
 
-        // Optionally add the timer to the run loop (though scheduledTimerWithTimeInterval does
-        // this automatically).
         let run_loop: id = msg_send![class!(NSRunLoop), currentRunLoop];
         let _: () = msg_send![run_loop, addTimer: _timer forMode: NSDefaultRunLoopMode];
     }
