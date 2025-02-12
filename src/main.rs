@@ -5,6 +5,7 @@ use log::info;
 use objc::runtime::{Class, Object, Sel};
 use objc::{class, msg_send, sel, sel_impl};
 
+mod clipboard;   // <-- import the new clipboard module
 mod logger;
 mod menu;
 
@@ -14,12 +15,11 @@ fn main() {
     info!("Starting Basic Menu Bar App");
 
     unsafe {
-        // Create an autorelease pool for Cocoa.
         let _pool = NSAutoreleasePool::new(nil);
         let app = NSApplication::sharedApplication(nil);
         app.setActivationPolicy_(NSApplicationActivationPolicy::NSApplicationActivationPolicyAccessory);
 
-        // Register our Objective-C handler class for menu events.
+        // Register our Objective‑C handler class for menu events.
         let handler_class = menu::register_selector();
         let handler: id = msg_send![handler_class, new];
 
@@ -35,6 +35,9 @@ fn main() {
             name: quit_notification
             object: nil
         ];
+
+        // Start monitoring the clipboard.
+        clipboard::start_clipboard_monitor();
 
         // Run the application.
         app.run();
