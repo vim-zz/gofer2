@@ -14,6 +14,6 @@ oslog = "0.2"
 # Mac App Bundle configuration for the `cargo bundle` command (optional)
 [package.metadata.bundle]
 name = "Gofer2"
-identifier = "com.example.gofer2"
-icon = ["resources/app.icns"]
+identifier = "com.1000ants.gofer2"
+icon = ["resources/icon.icns"]
 resources = ["resources/*.png"]
