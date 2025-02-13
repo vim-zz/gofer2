@@ -5,9 +5,10 @@ use log::info;
 use objc::runtime::{Class, Object, Sel};
 use objc::{class, msg_send, sel, sel_impl};
 
-mod clipboard;   // <-- import the new clipboard module
+mod clipboard; // <-- import the new clipboard module
 mod logger;
 mod menu;
+mod notification;
 
 fn main() {
     // Initialize our logger early on.
@@ -17,7 +18,12 @@ fn main() {
     unsafe {
         let _pool = NSAutoreleasePool::new(nil);
         let app = NSApplication::sharedApplication(nil);
-        app.setActivationPolicy_(NSApplicationActivationPolicy::NSApplicationActivationPolicyAccessory);
+        app.setActivationPolicy_(
+            NSApplicationActivationPolicy::NSApplicationActivationPolicyAccessory,
+        );
+
+        // Request notification permissions
+        notification::request_notification_permission();
 
         // Register our Objective‑C handler class for menu events.
         let handler_class = menu::register_selector();
@@ -28,7 +34,8 @@ fn main() {
 
         // Optionally, you can also listen for app termination notifications.
         let notification_center: id = msg_send![class!(NSNotificationCenter), defaultCenter];
-        let quit_notification = NSString::alloc(nil).init_str("NSApplicationWillTerminateNotification");
+        let quit_notification =
+            NSString::alloc(nil).init_str("NSApplicationWillTerminateNotification");
         let _: () = msg_send![notification_center,
             addObserver: handler
             selector: sel!(applicationWillTerminate:)

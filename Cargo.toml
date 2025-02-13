@@ -8,6 +8,7 @@ cocoa = "0.26"
 objc = "0.2"
 core-foundation = "0.10"
 log = "0.4"
+mac-notification-sys = "0.6"
 oslog = "0.2"
 
 # Mac App Bundle configuration for the `cargo bundle` command (optional)

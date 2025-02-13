@@ -1,11 +1,13 @@
+use crate::menu;
+use crate::notification;
 use cocoa::appkit::NSPasteboard;
 use cocoa::base::{id, nil};
 use cocoa::foundation::{NSDefaultRunLoopMode, NSString};
+use log::info;
 use objc::declare::ClassDecl;
 use objc::runtime::{Class, Object, Sel};
 use objc::{class, msg_send, sel, sel_impl};
-use log::info;
-use std::time::{Instant, Duration};
+use std::time::{Duration, Instant};
 
 // Structure to keep track of clipboard state
 struct ClipboardState {
@@ -37,7 +39,11 @@ unsafe fn get_clipboard_text(pasteboard: id) -> Option<String> {
     if copied_text != nil {
         let c_str = NSString::UTF8String(copied_text);
         if !c_str.is_null() {
-            return Some(std::ffi::CStr::from_ptr(c_str).to_string_lossy().into_owned());
+            return Some(
+                std::ffi::CStr::from_ptr(c_str)
+                    .to_string_lossy()
+                    .into_owned(),
+            );
         }
     }
     None
@@ -62,11 +68,24 @@ extern "C" fn check_pasteboard(this: &Object, _cmd: Sel, _timer: id) {
                 let now = Instant::now();
                 let time_since_last_copy = now.duration_since(state.last_copy_time);
 
-                if current_text == state.last_content && time_since_last_copy < Duration::from_secs(1) {
+                if current_text == state.last_content
+                    && time_since_last_copy < Duration::from_secs(1)
+                {
                     state.consecutive_copies += 1;
 
                     if state.consecutive_copies == 2 {
                         info!("Double copy detected! Text: {}", current_text);
+                        // Update the menubar text with the copied content
+                        let display_text = if current_text.len() > 20 {
+                            format!("{}...", &current_text[..20])
+                        } else {
+                            current_text.clone()
+                        };
+                        menu::update_menubar_text(&display_text);
+
+                        // Show notification
+                        notification::show_notification(&current_text, "converted");
+
                         // Reset consecutive copies after printing
                         state.consecutive_copies = 0;
                     }
@@ -93,7 +112,10 @@ pub fn start_clipboard_monitor() {
 
         let superclass = class!(NSObject);
         let mut decl = ClassDecl::new("ClipboardMonitor", superclass).unwrap();
-        decl.add_method(sel!(checkPasteboard:), check_pasteboard as extern "C" fn(&Object, Sel, id));
+        decl.add_method(
+            sel!(checkPasteboard:),
+            check_pasteboard as extern "C" fn(&Object, Sel, id),
+        );
         let cls = decl.register();
 
         let monitor: id = msg_send![cls, new];

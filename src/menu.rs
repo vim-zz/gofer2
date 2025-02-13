@@ -1,10 +1,14 @@
 use cocoa::appkit::{NSMenu, NSMenuItem, NSStatusBar, NSStatusItem};
 use cocoa::base::{id, nil, NO};
 use cocoa::foundation::{NSAutoreleasePool, NSString};
+use log::info;
 use objc::declare::ClassDecl;
 use objc::runtime::{Class, Object, Sel};
 use objc::{class, msg_send, sel, sel_impl};
-use log::info;
+use std::sync::Once;
+
+static mut STATUS_ITEM: Option<id> = None;
+static INIT: Once = Once::new();
 
 /// Registers and returns the pointer to an Objective-C class named "MenuHandler".
 /// The class implements two methods:
@@ -106,16 +110,34 @@ fn create_menu_item(handler: id, title: &str, action_id: &str) -> id {
 pub fn create_status_item(handler: id) -> id {
     unsafe {
         let status_bar = NSStatusBar::systemStatusBar(nil);
-        // Use variable length (-1.0) for the button.
         let status_item: id = msg_send![status_bar, statusItemWithLength: -1.0];
+
+        // Store the status_item reference
+        INIT.call_once(|| {
+            STATUS_ITEM = Some(status_item);
+        });
+
         // Set a simple title for the status bar button.
         let title = NSString::alloc(nil).init_str("🌟");
         let button: id = msg_send![status_item, button];
         let _: () = msg_send![button, setTitle: title];
 
-        // Set the status item’s menu.
+        // Set the status item's menu.
         status_item.setMenu_(create_menu(handler));
 
         status_item
+    }
+}
+
+pub fn update_menubar_text(text: &str) {
+    unsafe {
+        if let Some(status_item) = STATUS_ITEM {
+            let button: id = msg_send![status_item, button];
+            let title = NSString::alloc(nil).init_str(text);
+            let _: () = msg_send![button, setTitle: title];
+            info!("updated menu: {}", text);
+        } else {
+            info!("Status item not initialized!");
+        }
     }
 }
