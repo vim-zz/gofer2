@@ -1,14 +1,16 @@
-use cocoa::appkit::{NSMenu, NSMenuItem, NSStatusBar, NSStatusItem};
-use cocoa::base::{id, nil, NO};
-use cocoa::foundation::{NSAutoreleasePool, NSString};
-use log::info;
+use cocoa::appkit::{NSImage, NSMenu, NSMenuItem, NSStatusBar, NSStatusItem};
+use cocoa::base::{id, nil, NO, BOOL, YES};
+use cocoa::foundation::{NSAutoreleasePool, NSString, NSPoint, NSRect, NSSize};
 use objc::declare::ClassDecl;
 use objc::runtime::{Class, Object, Sel};
 use objc::{class, msg_send, sel, sel_impl};
+use log::info;
 use std::sync::Once;
+use std::path::PathBuf;
 
 static mut STATUS_ITEM: Option<id> = None;
 static INIT: Once = Once::new();
+
 
 /// Registers and returns the pointer to an Objective-C class named "MenuHandler".
 /// The class implements two methods:
@@ -117,10 +119,14 @@ pub fn create_status_item(handler: id) -> id {
             STATUS_ITEM = Some(status_item);
         });
 
-        // Set a simple title for the status bar button.
-        let title = NSString::alloc(nil).init_str("🌟");
         let button: id = msg_send![status_item, button];
-        let _: () = msg_send![button, setTitle: title];
+
+        // Load and set the image
+        let image = load_status_bar_image();
+        let _: () = msg_send![button, setImage: image];
+
+        // Optional: Remove the title completely
+        let _: () = msg_send![button, setTitle: NSString::alloc(nil).init_str("")];
 
         // Set the status item's menu.
         status_item.setMenu_(create_menu(handler));
@@ -139,5 +145,33 @@ pub fn update_menubar_text(text: &str) {
         } else {
             info!("Status item not initialized!");
         }
+    }
+}
+
+fn load_status_bar_image() -> id {
+    unsafe {
+        // Create a new image
+        let image: id = msg_send![class!(NSImage), new];  // Fixed NSImage creation
+
+        // Create NSSize struct using the provided type
+        let size = NSSize::new(16.0, 16.0);
+        let _: () = msg_send![image, setSize:size];
+
+        // Get the current executable path and construct the resource path
+        let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        path.push("resources");
+        path.push("icon_16x16.png");
+
+        // Convert the path to NSString
+        let path_str = path.to_str().unwrap_or("resources/icon_16x16.png");
+        let path_ns = NSString::alloc(nil).init_str(path_str);
+
+        // Initialize the image with the file
+        let _: () = msg_send![image, initWithContentsOfFile:path_ns];
+
+        // Set as template image for proper dark/light mode handling
+        let _: () = msg_send![image, setTemplate:YES as BOOL];
+
+        image
     }
 }
