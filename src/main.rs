@@ -5,7 +5,8 @@ use log::info;
 use objc::runtime::{Class, Object, Sel};
 use objc::{class, msg_send, sel, sel_impl};
 
-mod clipboard; // <-- import the new clipboard module
+mod clipboard;
+mod data;
 mod logger;
 mod menu;
 mod notification;
@@ -14,6 +15,16 @@ fn main() {
     // Initialize our logger early on.
     logger::init_logger();
     info!("Starting Basic Menu Bar App");
+
+    // Load CSV mappings
+    let csv_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("resources")
+        .join("mappings.csv");
+
+    match data::load_mappings(&csv_path, "source", "target") {
+            Ok(_) => info!("Successfully loaded mappings"),
+            Err(e) => info!("Failed to load mappings: {}", e),
+        }
 
     unsafe {
         let _pool = NSAutoreleasePool::new(nil);

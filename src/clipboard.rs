@@ -1,3 +1,4 @@
+use crate::data;
 use crate::menu;
 use crate::notification;
 use cocoa::appkit::NSPasteboard;
@@ -75,18 +76,30 @@ extern "C" fn check_pasteboard(this: &Object, _cmd: Sel, _timer: id) {
 
                     if state.consecutive_copies == 2 {
                         info!("Double copy detected! Text: {}", current_text);
-                        // Update the menubar text with the copied content
-                        let display_text = if current_text.len() > 20 {
-                            format!("{}...", &current_text[..20])
+
+                        // Look up the target text
+                        if let Some(target_text) = data::find_target(&current_text) {
+                            // Update the menubar text with the target content
+                            let display_text = if target_text.len() > 20 {
+                                format!("{}...", &target_text[..20])
+                            } else {
+                                target_text.clone()
+                            };
+                            menu::update_menubar_text(&display_text);
+
+                            // Show notification with the source and target
+                            let notification_message = format!("{} → {}", current_text, target_text);
+                            notification::show_notification("Text Converted", &notification_message);
                         } else {
-                            current_text.clone()
-                        };
-                        menu::update_menubar_text(&display_text);
+                            // No mapping found
+                            menu::update_menubar_text("No mapping found");
+                            notification::show_notification(
+                                "No mapping found",
+                                &format!("No target text found for: {}", current_text)
+                            );
+                        }
 
-                        // Show notification
-                        notification::show_notification(&current_text, "converted");
-
-                        // Reset consecutive copies after printing
+                        // Reset consecutive copies after processing
                         state.consecutive_copies = 0;
                     }
                 } else {

@@ -1,16 +1,15 @@
 use cocoa::appkit::{NSImage, NSMenu, NSMenuItem, NSStatusBar, NSStatusItem};
-use cocoa::base::{id, nil, NO, BOOL, YES};
-use cocoa::foundation::{NSAutoreleasePool, NSString, NSPoint, NSRect, NSSize};
+use cocoa::base::{id, nil, BOOL, NO, YES};
+use cocoa::foundation::{NSAutoreleasePool, NSPoint, NSRect, NSSize, NSString};
+use log::info;
 use objc::declare::ClassDecl;
 use objc::runtime::{Class, Object, Sel};
 use objc::{class, msg_send, sel, sel_impl};
-use log::info;
-use std::sync::Once;
 use std::path::PathBuf;
+use std::sync::Once;
 
 static mut STATUS_ITEM: Option<id> = None;
 static INIT: Once = Once::new();
-
 
 /// Registers and returns the pointer to an Objective-C class named "MenuHandler".
 /// The class implements two methods:
@@ -151,7 +150,7 @@ pub fn update_menubar_text(text: &str) {
 fn load_status_bar_image() -> id {
     unsafe {
         // Create a new image
-        let image: id = msg_send![class!(NSImage), new];  // Fixed NSImage creation
+        let image: id = msg_send![class!(NSImage), new]; // Fixed NSImage creation
 
         // Create NSSize struct using the provided type
         let size = NSSize::new(16.0, 16.0);

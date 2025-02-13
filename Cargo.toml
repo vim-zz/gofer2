@@ -5,15 +5,17 @@ edition = "2021"
 
 [dependencies]
 cocoa = "0.26"
-objc = "0.2"
 core-foundation = "0.10"
+csv = "1.2"
 log = "0.4"
 mac-notification-sys = "0.6"
+objc = "0.2"
 oslog = "0.2"
+serde = { version = "1.0", features = ["derive"] }
 
 # Mac App Bundle configuration for the `cargo bundle` command (optional)
 [package.metadata.bundle]
 name = "Gofer2"
 identifier = "com.1000ants.gofer2"
 icon = ["resources/icon.icns"]
-resources = ["resources/*.png"]
+resources = ["resources/*.png", "resources/mappings.csv"]
