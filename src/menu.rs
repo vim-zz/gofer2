@@ -150,19 +150,20 @@ pub fn update_menubar_text(text: &str) {
 fn load_status_bar_image() -> id {
     unsafe {
         // Create a new image
-        let image: id = msg_send![class!(NSImage), new]; // Fixed NSImage creation
+        let image: id = msg_send![class!(NSImage), new];
 
         // Create NSSize struct using the provided type
         let size = NSSize::new(16.0, 16.0);
         let _: () = msg_send![image, setSize:size];
 
         // Get the current executable path and construct the resource path
-        let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        path.push("resources");
-        path.push("icon_16x16.png");
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("resources")
+            .join("images")
+            .join("icon_16x16.png");
 
         // Convert the path to NSString
-        let path_str = path.to_str().unwrap_or("resources/icon_16x16.png");
+        let path_str = path.to_str().unwrap();
         let path_ns = NSString::alloc(nil).init_str(path_str);
 
         // Initialize the image with the file

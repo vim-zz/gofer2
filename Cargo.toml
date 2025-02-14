@@ -17,5 +17,5 @@ serde = { version = "1.0", features = ["derive"] }
 [package.metadata.bundle]
 name = "Gofer2"
 identifier = "com.1000ants.gofer2"
-icon = ["resources/icon.icns"]
-resources = ["resources/*.png", "resources/mappings.csv"]
+icon = ["resources/app_icon.icns"]
+resources = ["resources/images/*.png", "resources/*.csv"]
