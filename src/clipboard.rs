@@ -78,24 +78,26 @@ extern "C" fn check_pasteboard(this: &Object, _cmd: Sel, _timer: id) {
                         info!("Double copy detected! Text: {}", current_text);
 
                         // Look up the target text
-                        if let Some(target_text) = data::find_target(&current_text) {
+                        if let Some(mapping) = data::find_target(&current_text) {
                             // Update the menubar text with the target content
-                            let display_text = if target_text.len() > 20 {
-                                format!("{}...", &target_text[..20])
+                            let display_text = if mapping.value.len() > 20 {
+                                format!("{}...", &mapping.value[..20])
                             } else {
-                                target_text.clone()
+                                mapping.value.clone()
                             };
                             menu::update_menubar_text(&display_text);
 
-                            // Show notification with the source and target
-                            let notification_message = format!("{} → {}", current_text, target_text);
-                            notification::show_notification("Text Converted", &notification_message);
+                            // Show notification with the source and target including column names
+                            notification::show_notification(
+                                format!("{} → {}", mapping.source_name, mapping.target_name).as_str(),
+                                format!("{} → {}", current_text, mapping.value).as_str(),
+                            );
                         } else {
                             // No mapping found
                             menu::update_menubar_text("No mapping found");
                             notification::show_notification(
                                 "No mapping found",
-                                &format!("No target text found for: {}", current_text)
+                                &format!("No target text found for: {}", current_text),
                             );
                         }
 

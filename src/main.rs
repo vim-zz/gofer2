@@ -16,15 +16,13 @@ fn main() {
     logger::init_logger();
     info!("Starting Basic Menu Bar App");
 
-    // Load CSV mappings
-    let csv_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("resources")
-        .join("mappings.csv");
+    // Load all CSV mappings from the resources directory
+    let csv_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("resources");
 
-    match data::load_mappings(&csv_path, "source", "target") {
-            Ok(_) => info!("Successfully loaded mappings"),
-            Err(e) => info!("Failed to load mappings: {}", e),
-        }
+    match data::load_all_mappings(&csv_dir) {
+        Ok(_) => info!("Successfully loaded all mappings"),
+        Err(e) => info!("Failed to load mappings: {}", e),
+    }
 
     unsafe {
         let _pool = NSAutoreleasePool::new(nil);

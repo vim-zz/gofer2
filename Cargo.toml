@@ -15,7 +15,10 @@ serde = { version = "1.0", features = ["derive"] }
 
 # Mac App Bundle configuration for the `cargo bundle` command (optional)
 [package.metadata.bundle]
-name = "Gofer2"
-identifier = "com.1000ants.gofer2"
+category = "Developer Tool"
+copyright = "Copyright (c) 2024 Ofer Affias"
 icon = ["resources/app_icon.icns"]
+identifier = "com.1000ants.gofer2"
+name = "Gofer2"
 resources = ["resources/images/*.png", "resources/*.csv"]
+short_description = "A clipboard translation tool"
