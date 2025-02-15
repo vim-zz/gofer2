@@ -1,5 +1,4 @@
 use csv::Reader;
-use dirs_next::home_dir;
 use log::info;
 use std::collections::HashMap;
 use std::error::Error;
@@ -31,11 +30,8 @@ impl Error for MappingError {}
 
 static MAPPINGS: OnceLock<HashMap<String, Mapping>> = OnceLock::new();
 
-fn get_user_config_dir() -> Option<PathBuf> {
-    home_dir().map(|home| home.join(".gofer2"))
-}
 
-pub fn load_all_mappings(app_dir: &Path) -> Result<(), Box<dyn Error>> {
+pub fn load_all_mappings(app_dir: &Path, user_dir: Option<&Path>) -> Result<(), Box<dyn Error>> {
     let mut all_mappings = HashMap::new();
 
     // First load app mappings
@@ -43,13 +39,9 @@ pub fn load_all_mappings(app_dir: &Path) -> Result<(), Box<dyn Error>> {
     load_directory_mappings(app_dir, &mut all_mappings)?;
 
     // Then load user mappings (will override any duplicates)
-    if let Some(user_dir) = get_user_config_dir() {
-        if user_dir.exists() {
-            info!("Loading user mappings from: {:?}", user_dir);
-            load_directory_mappings(&user_dir, &mut all_mappings)?;
-        } else {
-            info!("User config directory does not exist: {:?}", user_dir);
-        }
+    if let Some(user_dir) = user_dir {
+        info!("Loading user mappings from: {:?}", user_dir);
+        load_directory_mappings(&user_dir, &mut all_mappings)?;
     }
 
     info!("Loaded {} total mappings", all_mappings.len());

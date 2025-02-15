@@ -10,16 +10,21 @@ mod data;
 mod logger;
 mod menu;
 mod notification;
+mod utils;
 
 fn main() {
     // Initialize our logger early on.
     logger::init_logger();
     info!("Starting Basic Menu Bar App");
 
-    // Load all CSV mappings from the resources directory
-    let csv_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("resources");
+    // Load all CSV mappings from the OSX app resources directory
+    let csv_dir = std::path::PathBuf::from("Contents")
+        .join("Resources")
+        .join("resources");
+    // Load all CSV mappings from the user gofer2 directory
+    let user_dir = utils::get_user_config_dir();
 
-    match data::load_all_mappings(&csv_dir) {
+    match data::load_all_mappings(&csv_dir, user_dir.as_deref()) {
         Ok(_) => info!("Successfully loaded all mappings"),
         Err(e) => {
             let error_msg = format!("{}", e);
