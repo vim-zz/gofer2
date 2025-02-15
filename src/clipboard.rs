@@ -79,22 +79,18 @@ extern "C" fn check_pasteboard(this: &Object, _cmd: Sel, _timer: id) {
 
                         // Look up the target text
                         if let Some(mapping) = data::find_target(&current_text) {
-                            // Update the menubar text with the target content
-                            let display_text = if mapping.value.len() > 20 {
-                                format!("{}...", &mapping.value[..20])
-                            } else {
-                                mapping.value.clone()
-                            };
-                            menu::update_menubar_text(&display_text);
+                            // Add new menu item with translation
+                            menu::add_menu_item(&current_text, &mapping.value);
 
-                            // Show notification with the source and target including column names
+                            // Show notification
                             notification::show_notification(
-                                format!("{} → {}", mapping.source_name, mapping.target_name).as_str(),
+                                format!("{} → {}", mapping.source_name, mapping.target_name)
+                                    .as_str(),
                                 format!("{} → {}", current_text, mapping.value).as_str(),
                             );
                         } else {
                             // No mapping found
-                            menu::update_menubar_text("No mapping found");
+                            // menu::add_menu_item(&current_text, "No translation found");
                             notification::show_notification(
                                 "No mapping found",
                                 &format!("No target text found for: {}", current_text),
