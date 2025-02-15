@@ -214,6 +214,7 @@ dependencies = [
  "cocoa",
  "core-foundation",
  "csv",
+ "dirs-next",
  "log",
  "mac-notification-sys",
  "objc",

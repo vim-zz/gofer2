@@ -84,7 +84,7 @@ extern "C" fn check_pasteboard(this: &Object, _cmd: Sel, _timer: id) {
 
                             // Show notification
                             notification::show_notification(
-                                format!("{} → {}", mapping.source_name, mapping.target_name)
+                                format!("{} to {}", mapping.source_name, mapping.target_name)
                                     .as_str(),
                                 format!("{} → {}", current_text, mapping.value).as_str(),
                             );

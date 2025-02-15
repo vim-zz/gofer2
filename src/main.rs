@@ -21,7 +21,12 @@ fn main() {
 
     match data::load_all_mappings(&csv_dir) {
         Ok(_) => info!("Successfully loaded all mappings"),
-        Err(e) => info!("Failed to load mappings: {}", e),
+        Err(e) => {
+            let error_msg = format!("{}", e);
+            info!("{}", error_msg);
+            // Show error notification to user
+            notification::show_notification("Mapping Load Error", &error_msg);
+        }
     }
 
     unsafe {
