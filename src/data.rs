@@ -30,7 +30,6 @@ impl Error for MappingError {}
 
 static MAPPINGS: OnceLock<HashMap<String, Mapping>> = OnceLock::new();
 
-
 pub fn load_all_mappings(app_dir: &Path, user_dir: Option<&Path>) -> Result<(), Box<dyn Error>> {
     let mut all_mappings = HashMap::new();
 

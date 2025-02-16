@@ -1,7 +1,8 @@
 [package]
 name = "gofer2"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
+description = "A clipboard translation tool"
 
 [dependencies]
 cocoa = "0.26"
@@ -17,9 +18,9 @@ serde = { version = "1.0", features = ["derive"] }
 # Mac App Bundle configuration for the `cargo bundle` command (optional)
 [package.metadata.bundle]
 category = "Developer Tool"
-copyright = "Copyright (c) 2024 Ofer Affias"
 icon = ["resources/app_icon.icns"]
 identifier = "com.1000ants.gofer2"
 name = "Gofer2"
 resources = ["resources/images/*.png", "resources/*.csv"]
 short_description = "A clipboard translation tool"
+long_description = "Gofer2 is a clipboard translation tool that allows users to load mapping CSV files from the ~/.gofer2 directory."

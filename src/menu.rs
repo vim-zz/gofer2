@@ -1,5 +1,5 @@
 // src/menu.rs
-use cocoa::appkit::{NSMenu, NSMenuItem, NSStatusBar, NSStatusItem};
+use cocoa::appkit::{NSEventModifierFlags, NSMenu, NSMenuItem, NSStatusBar, NSStatusItem};
 use cocoa::base::{id, nil, BOOL, NO, YES};
 use cocoa::foundation::{NSAutoreleasePool, NSSize, NSString};
 use log::info;
@@ -14,6 +14,44 @@ static INIT: Once = Once::new();
 static mut MENU: Option<id> = None;
 static mut HANDLER: Option<id> = None;
 
+fn get_app_version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
+}
+
+extern "C" fn order_front_standard_about_panel(_this: &Object, _cmd: Sel, _sender: id) {
+    unsafe {
+        let app: id = msg_send![class!(NSApplication), sharedApplication];
+        let _: () = msg_send![app, orderFrontStandardAboutPanel: nil];
+    }
+}
+
+extern "C" fn show_help_panel(_this: &Object, _cmd: Sel, _sender: id) {
+    unsafe {
+        let alert: id = msg_send![class!(NSAlert), new];
+
+        // Set alert properties
+        let title = NSString::alloc(nil).init_str("Gofer2 Help");
+        let _: () = msg_send![alert, setMessageText:title];
+
+        let message = NSString::alloc(nil).init_str(
+            "How to use Gofer2:\n\n\
+            1. Add CSV files to ~/.gofer2/ directory with two columns:\n\
+               English,French\n\
+               hello,bonjour\n\
+               goodbye,au revoir\n\n\
+            2. Double-copy (⌘C twice quickly) any text to look up its translation\n\n\
+            3. When a translation is found:\n\
+               • A notification will appear\n\
+               • The translation will be added to this menu\n\n\
+            4. Click any translation in the menu to copy it to clipboard",
+        );
+        let _: () = msg_send![alert, setInformativeText:message];
+
+        // Show the alert
+        let _: () = msg_send![alert, runModal];
+    }
+}
+
 pub fn register_selector() -> *const Class {
     unsafe {
         let superclass = class!(NSObject);
@@ -27,6 +65,16 @@ pub fn register_selector() -> *const Class {
         decl.add_method(
             sel!(applicationWillTerminate:),
             application_will_terminate as extern "C" fn(&Object, Sel, id),
+        );
+
+        decl.add_method(
+            sel!(orderFrontStandardAboutPanel:),
+            order_front_standard_about_panel as extern "C" fn(&Object, Sel, id),
+        );
+
+        decl.add_method(
+            sel!(showHelpPanel:),
+            show_help_panel as extern "C" fn(&Object, Sel, id),
         );
 
         decl.register()
@@ -74,6 +122,35 @@ pub fn create_menu(handler: id) -> id {
         // Store menu reference
         MENU = Some(menu);
 
+        // Add Separator before About
+        let separator1 = NSMenuItem::separatorItem(nil);
+        menu.addItem_(separator1);
+
+        // Add About item
+        let about_title =
+            NSString::alloc(nil).init_str(&format!("Gofer2 (v{})", get_app_version()));
+        let about_item = NSMenuItem::alloc(nil).initWithTitle_action_keyEquivalent_(
+            about_title,
+            sel!(orderFrontStandardAboutPanel:),
+            NSString::alloc(nil).init_str(""),
+        );
+        about_item.setTarget_(handler);
+        menu.addItem_(about_item);
+
+        // Add Help item
+        let help_title = NSString::alloc(nil).init_str("Help");
+        let help_item = NSMenuItem::alloc(nil).initWithTitle_action_keyEquivalent_(
+            help_title,
+            sel!(showHelpPanel:),
+            NSString::alloc(nil).init_str("h"),
+        );
+        help_item.setTarget_(handler);
+        menu.addItem_(help_item);
+
+        // Add Separator after About
+        let separator2 = NSMenuItem::separatorItem(nil);
+        menu.addItem_(separator2);
+
         // Add Quit item
         let quit_title = NSString::alloc(nil).init_str("Quit");
         let quit_item = NSMenuItem::alloc(nil).initWithTitle_action_keyEquivalent_(
@@ -81,6 +158,10 @@ pub fn create_menu(handler: id) -> id {
             sel!(terminate:),
             NSString::alloc(nil).init_str("q"),
         );
+
+        // Set Command modifier for Quit shortcut
+        let _: () = msg_send![quit_item, setKeyEquivalentModifierMask: NSEventModifierFlags::NSCommandKeyMask];
+
         menu.addItem_(quit_item);
 
         menu
