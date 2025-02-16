@@ -14,6 +14,13 @@ static INIT: Once = Once::new();
 static mut MENU: Option<id> = None;
 static mut HANDLER: Option<id> = None;
 
+// Separator
+// Help
+// About
+// Separator
+// Quit
+static STATIC_ITEMS: i64 = 5;
+
 fn get_app_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
 }
@@ -212,9 +219,9 @@ pub fn add_menu_item(source: &str, target: &str) {
 
                 // Limit the number of items (optional)
                 let count: i64 = msg_send![menu, numberOfItems];
-                if count > 10 {
-                    // Keep last 10 items plus Quit
-                    let _: () = msg_send![menu, removeItemAtIndex:count - 2];
+                if count > 10 + STATIC_ITEMS {
+                    // Keep last 10 items plus:
+                    let _: () = msg_send![menu, removeItemAtIndex:count - STATIC_ITEMS - 1];
                 }
             }
         }
