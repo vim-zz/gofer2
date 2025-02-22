@@ -2,7 +2,6 @@ use cocoa::appkit::{NSApplication, NSApplicationActivationPolicy};
 use cocoa::base::{id, nil};
 use cocoa::foundation::{NSAutoreleasePool, NSString};
 use log::info;
-use objc::runtime::{Class, Object, Sel};
 use objc::{class, msg_send, sel, sel_impl};
 
 mod clipboard;

@@ -1,6 +1,6 @@
 // src/menu.rs
 use cocoa::appkit::{NSEventModifierFlags, NSMenu, NSMenuItem, NSStatusBar, NSStatusItem};
-use cocoa::base::{id, nil, BOOL, NO, YES};
+use cocoa::base::{id, nil, BOOL, YES};
 use cocoa::foundation::{NSAutoreleasePool, NSSize, NSString};
 use log::info;
 use objc::declare::ClassDecl;

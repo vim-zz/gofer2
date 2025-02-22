@@ -1,3 +1,5 @@
+
+// src/clipboard.rs
 use crate::data;
 use crate::menu;
 use crate::notification;
@@ -6,8 +8,9 @@ use cocoa::base::{id, nil};
 use cocoa::foundation::{NSDefaultRunLoopMode, NSString};
 use log::info;
 use objc::declare::ClassDecl;
-use objc::runtime::{Class, Object, Sel};
+use objc::runtime::{Object, Sel};
 use objc::{class, msg_send, sel, sel_impl};
+use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 // Structure to keep track of clipboard state
@@ -18,19 +21,14 @@ struct ClipboardState {
     consecutive_copies: u32,
 }
 
-// Static variable to store clipboard state
-static mut CLIPBOARD_STATE: Option<ClipboardState> = None;
-
-/// Initialize the clipboard state
-fn init_clipboard_state() {
-    unsafe {
-        CLIPBOARD_STATE = Some(ClipboardState {
-            last_change_count: 0,
-            last_content: String::new(),
-            last_copy_time: Instant::now(),
-            consecutive_copies: 0,
-        });
-    }
+// Use a Mutex for thread-safe interior mutability
+lazy_static::lazy_static! {
+    static ref CLIPBOARD_STATE: Mutex<ClipboardState> = Mutex::new(ClipboardState {
+        last_change_count: 0,
+        last_content: String::new(),
+        last_copy_time: Instant::now(),
+        consecutive_copies: 0,
+    });
 }
 
 /// Get the current clipboard text content
@@ -50,14 +48,9 @@ unsafe fn get_clipboard_text(pasteboard: id) -> Option<String> {
     None
 }
 
-extern "C" fn check_pasteboard(this: &Object, _cmd: Sel, _timer: id) {
+extern "C" fn check_pasteboard(_this: &Object, _cmd: Sel, _timer: id) {
     unsafe {
-        // Initialize state if it hasn't been initialized
-        if CLIPBOARD_STATE.is_none() {
-            init_clipboard_state();
-        }
-
-        let state = CLIPBOARD_STATE.as_mut().unwrap();
+        let mut state = CLIPBOARD_STATE.lock().unwrap();
         let pasteboard: id = NSPasteboard::generalPasteboard(nil);
         let current_count: i64 = msg_send![pasteboard, changeCount];
 
@@ -90,7 +83,6 @@ extern "C" fn check_pasteboard(this: &Object, _cmd: Sel, _timer: id) {
                             );
                         } else {
                             // No mapping found
-                            // menu::add_menu_item(&current_text, "No translation found");
                             notification::show_notification(
                                 "No mapping found",
                                 &format!("No target text found for: {}", current_text),
@@ -118,9 +110,6 @@ extern "C" fn check_pasteboard(this: &Object, _cmd: Sel, _timer: id) {
 
 pub fn start_clipboard_monitor() {
     unsafe {
-        // Initialize the clipboard state
-        init_clipboard_state();
-
         let superclass = class!(NSObject);
         let mut decl = ClassDecl::new("ClipboardMonitor", superclass).unwrap();
         decl.add_method(
