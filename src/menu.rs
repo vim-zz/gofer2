@@ -15,10 +15,10 @@ static INIT: Once = Once::new();
 static mut MENU: Option<id> = None;
 static mut HANDLER: Option<id> = None;
 
-// Search
 // Separator
-// Help
 // About
+// Search
+// Help
 // Separator
 // Quit
 static STATIC_ITEMS: i64 = 6;
@@ -133,16 +133,6 @@ pub fn create_menu(handler: id) -> id {
     unsafe {
         let menu = NSMenu::new(nil).autorelease();
 
-        // Add Search item
-        let search_title = NSString::alloc(nil).init_str("Search");
-        let search_item = NSMenuItem::alloc(nil).initWithTitle_action_keyEquivalent_(
-            search_title,
-            sel!(showSearchWindow:),
-            NSString::alloc(nil).init_str("f"),
-        );
-        search_item.setTarget_(handler);
-        menu.addItem_(search_item);
-
         // Store menu reference
         MENU = Some(menu);
 
@@ -160,6 +150,16 @@ pub fn create_menu(handler: id) -> id {
         );
         about_item.setTarget_(handler);
         menu.addItem_(about_item);
+
+        // Add Search item
+        let search_title = NSString::alloc(nil).init_str("Search");
+        let search_item = NSMenuItem::alloc(nil).initWithTitle_action_keyEquivalent_(
+            search_title,
+            sel!(showSearchWindow:),
+            NSString::alloc(nil).init_str("f"),
+        );
+        search_item.setTarget_(handler);
+        menu.addItem_(search_item);
 
         // Add Help item
         let help_title = NSString::alloc(nil).init_str("Help");
