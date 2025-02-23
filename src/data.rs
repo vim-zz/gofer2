@@ -133,3 +133,7 @@ fn load_directory_mappings(
 pub fn find_target(source: &str) -> Option<&Mapping> {
     MAPPINGS.get().and_then(|mappings| mappings.get(source))
 }
+
+pub fn get_all_mappings() -> Option<&'static HashMap<String, Mapping>> {
+    MAPPINGS.get()
+}

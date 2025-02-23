@@ -18,8 +18,3 @@ pub fn show_notification(title: &str, message: &str) {
         Err(e) => info!("Failed to send notification: {:?}", e),
     }
 }
-
-pub fn request_notification_permission() {
-    // Not needed for this crate as it handles permissions internally
-    info!("Notification system initialized");
-}

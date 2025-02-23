@@ -1,4 +1,3 @@
-
 // src/clipboard.rs
 use crate::data;
 use crate::menu;

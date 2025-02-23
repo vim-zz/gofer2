@@ -1,6 +1,7 @@
 // src/menu.rs
+use crate::search;
 use cocoa::appkit::{NSEventModifierFlags, NSMenu, NSMenuItem, NSStatusBar, NSStatusItem};
-use cocoa::base::{id, nil, BOOL, YES};
+use cocoa::base::{BOOL, YES, id, nil};
 use cocoa::foundation::{NSAutoreleasePool, NSSize, NSString};
 use log::info;
 use objc::declare::ClassDecl;
@@ -14,12 +15,13 @@ static INIT: Once = Once::new();
 static mut MENU: Option<id> = None;
 static mut HANDLER: Option<id> = None;
 
+// Search
 // Separator
 // Help
 // About
 // Separator
 // Quit
-static STATIC_ITEMS: i64 = 5;
+static STATIC_ITEMS: i64 = 6;
 
 fn get_app_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
@@ -84,6 +86,11 @@ pub fn register_selector() -> *const Class {
             show_help_panel as extern "C" fn(&Object, Sel, id),
         );
 
+        decl.add_method(
+            sel!(showSearchWindow:),
+            search::show_search_window as extern "C" fn(&Object, Sel, id),
+        );
+
         decl.register()
     }
 }
@@ -125,6 +132,16 @@ extern "C" fn application_will_terminate(_this: &Object, _cmd: Sel, _notificatio
 pub fn create_menu(handler: id) -> id {
     unsafe {
         let menu = NSMenu::new(nil).autorelease();
+
+        // Add Search item
+        let search_title = NSString::alloc(nil).init_str("Search");
+        let search_item = NSMenuItem::alloc(nil).initWithTitle_action_keyEquivalent_(
+            search_title,
+            sel!(showSearchWindow:),
+            NSString::alloc(nil).init_str("f"),
+        );
+        search_item.setTarget_(handler);
+        menu.addItem_(search_item);
 
         // Store menu reference
         MENU = Some(menu);

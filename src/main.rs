@@ -3,13 +3,15 @@ use cocoa::base::{id, nil};
 use cocoa::foundation::{NSAutoreleasePool, NSString};
 use log::info;
 use objc::{class, msg_send, sel, sel_impl};
+use std::env::home_dir;
+use std::path::PathBuf;
 
 mod clipboard;
 mod data;
 mod logger;
 mod menu;
 mod notification;
-mod utils;
+mod search;
 
 fn main() {
     // Initialize our logger early on.
@@ -21,7 +23,7 @@ fn main() {
         .join("Resources")
         .join("resources");
     // Load all CSV mappings from the user gofer2 directory
-    let user_dir = utils::get_user_config_dir();
+    let user_dir: Option<PathBuf> = home_dir().map(|home| home.join(".gofer2"));
 
     match data::load_all_mappings(&csv_dir, user_dir.as_deref()) {
         Ok(_) => info!("Successfully loaded all mappings"),
@@ -33,15 +35,15 @@ fn main() {
         }
     }
 
+    // Register search delegates
+    search::register_search_delegates();
+
     unsafe {
         let _pool = NSAutoreleasePool::new(nil);
         let app = NSApplication::sharedApplication(nil);
         app.setActivationPolicy_(
             NSApplicationActivationPolicy::NSApplicationActivationPolicyAccessory,
         );
-
-        // Request notification permissions
-        notification::request_notification_permission();
 
         // Register our Objective‑C handler class for menu events.
         let handler_class = menu::register_selector();
