@@ -1,7 +1,7 @@
 // src/search.rs
-use cocoa::appkit::{NSApp, NSTextField, NSWindow, NSWindowStyleMask};
+use cocoa::appkit::{NSApp, NSWindowStyleMask};
 use cocoa::base::{NO, YES, id, nil};
-use cocoa::foundation::{NSArray, NSPoint, NSRect, NSSize, NSString};
+use cocoa::foundation::{NSPoint, NSRect, NSSize, NSString};
 use fuzzy_matcher::FuzzyMatcher;
 use fuzzy_matcher::skim::SkimMatcherV2;
 use log::info;

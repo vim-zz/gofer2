@@ -32,19 +32,21 @@ lazy_static::lazy_static! {
 
 /// Get the current clipboard text content
 unsafe fn get_clipboard_text(pasteboard: id) -> Option<String> {
-    let type_str = NSString::alloc(nil).init_str("public.utf8-plain-text");
-    let copied_text: id = msg_send![pasteboard, stringForType: type_str];
-    if copied_text != nil {
-        let c_str = NSString::UTF8String(copied_text);
-        if !c_str.is_null() {
-            return Some(
-                std::ffi::CStr::from_ptr(c_str)
-                    .to_string_lossy()
-                    .into_owned(),
-            );
+    unsafe {
+        let type_str = NSString::alloc(nil).init_str("public.utf8-plain-text");
+        let copied_text: id = msg_send![pasteboard, stringForType: type_str];
+        if copied_text != nil {
+            let c_str = NSString::UTF8String(copied_text);
+            if !c_str.is_null() {
+                return Some(
+                    std::ffi::CStr::from_ptr(c_str)
+                        .to_string_lossy()
+                        .into_owned(),
+                );
+            }
         }
+        None
     }
-    None
 }
 
 extern "C" fn check_pasteboard(_this: &Object, _cmd: Sel, _timer: id) {
