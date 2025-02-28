@@ -259,15 +259,15 @@ fn search_mappings(query: &str) -> Option<Vec<SearchResult>> {
 }
 
 unsafe fn find_window_with_title(title: &str) -> Option<id> {
-    let windows: id = msg_send![NSApp(), windows];
-    let count: usize = msg_send![windows, count];
+    let windows: id = unsafe { msg_send![NSApp(), windows] };
+    let count: usize = unsafe { msg_send![windows, count] };
 
     for i in 0..count {
-        let window: id = msg_send![windows, objectAtIndex:i];
-        let window_title: id = msg_send![window, title];
-        let title_str = NSString::UTF8String(window_title);
+        let window: id = unsafe { msg_send![windows, objectAtIndex:i] };
+        let window_title: id = unsafe { msg_send![window, title] };
+        let title_str = unsafe { NSString::UTF8String(window_title) };
         if !title_str.is_null() {
-            let window_title = std::ffi::CStr::from_ptr(title_str).to_string_lossy();
+            let window_title = unsafe { std::ffi::CStr::from_ptr(title_str).to_string_lossy() };
             if window_title == title {
                 return Some(window);
             }
