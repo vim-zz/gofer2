@@ -23,7 +23,7 @@ fn main() {
         .join("Resources")
         .join("resources");
     // Load all CSV mappings from the user gofer2 directory
-    let user_dir: Option<PathBuf> = home_dir().map(|home| home.join(".gofer2"));
+    let user_dir: Option<PathBuf> = home_dir().map(|home| home.join(".config").join("gofer"));
 
     match data::load_all_mappings(&csv_dir, user_dir.as_deref()) {
         Ok(_) => info!("Successfully loaded all mappings"),
